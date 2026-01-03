@@ -17,23 +17,38 @@ class AudioService {
         this.init();
         if (!this.context || !this.gainNode) return;
 
+        const t = this.context.currentTime;
         const osc = this.context.createOscillator();
-        osc.connect(this.gainNode);
+        const envelope = this.context.createGain();
+
+        // Connect: Osc -> Envelope -> Master Gain -> Destination
+        osc.connect(envelope);
+        envelope.connect(this.gainNode);
 
         osc.type = 'sine';
 
-        const now = this.context.currentTime;
-
         if (type === 'short') {
-            // High pitch for countdown (e.g., 3, 2, 1)
-            osc.frequency.setValueAtTime(880, now); // A5
-            osc.start(now);
-            osc.stop(now + 0.1);
+            // 3-2-1 Count: Softer pitch (E5)
+            osc.frequency.setValueAtTime(660, t);
+
+            // "Ping" Envelope
+            envelope.gain.setValueAtTime(0, t);
+            envelope.gain.linearRampToValueAtTime(0.3, t + 0.05); // Attack
+            envelope.gain.exponentialRampToValueAtTime(0.001, t + 0.3); // Release
+
+            osc.start(t);
+            osc.stop(t + 0.3);
         } else {
-            // Slightly lower text, longer for phase change
-            osc.frequency.setValueAtTime(1760, now); // A6
-            osc.start(now);
-            osc.stop(now + 0.4);
+            // Phase Change: Harmonic high pitch (A5)
+            osc.frequency.setValueAtTime(880, t);
+
+            // "Chime" Envelope
+            envelope.gain.setValueAtTime(0, t);
+            envelope.gain.linearRampToValueAtTime(0.5, t + 0.05); // Attack
+            envelope.gain.exponentialRampToValueAtTime(0.001, t + 0.8); // Long Release
+
+            osc.start(t);
+            osc.stop(t + 0.8);
         }
     }
 }
