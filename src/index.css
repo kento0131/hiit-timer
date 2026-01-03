@@ -10,15 +10,16 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
   min-height: 100dvh;
-  /* use dynamic viewport height for mobile */
   background-color: #0f172a;
-  /* slate-900 fallback */
   color: white;
   overscroll-behavior: none;
-  /* prevent pull-to-refresh on mobile */
   -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  width: 100%;
+  min-height: 100dvh;
 }
