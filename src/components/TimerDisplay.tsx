@@ -1,7 +1,6 @@
-
-import type { TimerPhase } from '../hooks/useTimer';
-import { Pause, Play, RotateCcw } from 'lucide-react';
-import { clsx } from 'clsx';
+import React, { useEffect, useState } from 'react';
+import { Play, Pause, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { TimerPhase } from '../hooks/useTimer';
 
 interface TimerDisplayProps {
     phase: TimerPhase;
@@ -24,88 +23,115 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
     onResume,
     onReset
 }) => {
-    const getGradient = () => {
-        switch (phase) {
-            case 'work': return 'from-red-600 via-orange-600 to-red-800';
-            case 'rest': return 'from-blue-600 via-cyan-600 to-blue-800';
-            case 'complete': return 'from-emerald-500 via-green-500 to-emerald-700';
-            default: return 'from-slate-800 to-slate-900';
+    const [bgColor, setBgColor] = useState('bg-slate-900');
+
+    // Dynamic background based on phase
+    useEffect(() => {
+        if (phase === 'work') {
+            setBgColor('bg-orange-600');
+        } else if (phase === 'rest') {
+            setBgColor('bg-teal-600');
+        } else if (phase === 'complete') {
+            setBgColor('bg-emerald-600');
+        } else {
+            setBgColor('bg-slate-900');
         }
+    }, [phase]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     const getPhaseLabel = () => {
         switch (phase) {
-            case 'work': return 'WORKOUT';
+            case 'work': return 'WORK IT!';
             case 'rest': return 'REST';
-            case 'complete': return 'FINISHED';
+            case 'complete': return 'COMPLETED';
             default: return 'READY';
         }
     };
 
     return (
-        <div className={clsx(
-            "fixed inset-0 flex flex-col items-center justify-between text-white transition-[background] duration-700 ease-in-out touch-none select-none overflow-hidden",
-            "bg-gradient-to-br",
-            getGradient()
-        )}>
-            {/* Background Animated Noise/Grain (Optional, keeping simple for performance) */}
+        <div className={`fixed inset-0 w-full h-full transition-colors duration-700 ease-in-out ${bgColor} flex flex-col items-center justify-center overflow-hidden`}>
 
-            {/* Top Section: Progress */}
-            <div className="w-full pt-12 px-8 flex justify-between items-start z-10">
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium opacity-60 uppercase tracking-widest">Set</span>
-                    <div className="text-3xl font-bold font-mono">
-                        {currentSet}<span className="text-xl opacity-50 mx-1">/</span>{totalSets}
-                    </div>
-                </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium opacity-60 uppercase tracking-widest">Phase</span>
-                    <span className="text-xl font-bold tracking-wider">{getPhaseLabel()}</span>
-                </div>
+            {/* Background Animations */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vmax] h-[150vmax] rounded-full mix-blend-overlay opacity-20 filter blur-[100px] animate-pulse ${phase === 'work' ? 'bg-red-500' : 'bg-blue-500'}`} />
             </div>
 
-            {/* Center Section: Timer */}
-            <div className="relative z-10 flex-1 flex items-center justify-center">
-                {/* Pulsing rings for Work/Rest */}
-                {isActive && (
+            <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-md px-6">
+
+                {/* Phase & Sets Info */}
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold tracking-[0.2em] text-white/80 animate-fade-in">
+                        {getPhaseLabel()}
+                    </h2>
+                    {phase !== 'complete' && (
+                        <div className="glass-panel px-6 py-2 rounded-full inline-flex items-center gap-2 text-white/90">
+                            <span className="text-sm font-medium uppercase tracking-wider text-white/60">Set</span>
+                            <span className="text-xl font-bold font-mono">{currentSet}</span>
+                            <span className="text-white/40">/</span>
+                            <span className="text-lg font-mono text-white/60">{totalSets}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Main Timer */}
+                <div className="relative">
+                    <div className="text-[12rem] leading-none font-bold font-mono tracking-tighter tabular-nums drop-shadow-2xl">
+                        {formatTime(timeLeft)}
+                    </div>
+                    {/* Ring or Progress could go here */}
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center gap-6 mt-8">
+                    {phase === 'complete' ? (
+                        <button
+                            onClick={onReset}
+                            className="bg-white text-emerald-900 px-8 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg hover:bg-emerald-50 hover:scale-105 transition-all"
+                        >
+                            <RotateCcw className="w-6 h-6" />
+                            FINISH WORKOUT
+                        </button>
+                    ) : (
+                        <>
+                            {isActive ? (
+                                <button
+                                    onClick={onPause}
+                                    className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-all active:scale-95"
+                                >
+                                    <Pause className="w-8 h-8 fill-white" />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={onResume}
+                                    className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 transition-all active:scale-95 shadow-lg shadow-black/20"
+                                >
+                                    <Play className="w-8 h-8 fill-black" />
+                                </button>
+                            )}
+
+                            {!isActive && (
+                                <button
+                                    onClick={onReset}
+                                    className="absolute bottom-12 text-white/60 hover:text-white transition-colors text-sm font-medium uppercase tracking-widest"
+                                >
+                                    Cancel Workout
+                                </button>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Complete State Extra */}
+                {phase === 'complete' && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-[300px] h-[300px] border-2 border-white/20 rounded-full animate-ping opacity-20" />
-                        <div className="w-[400px] h-[400px] border border-white/10 rounded-full animate-ping delay-150 opacity-10" />
+                        <CheckCircle2 className="w-64 h-64 text-white/20 animate-ping" />
                     </div>
                 )}
-
-                <div className="text-[25vw] sm:text-[10rem] font-bold leading-none tracking-tighter tabular-nums drop-shadow-2xl font-mono">
-                    {timeLeft}
-                </div>
-            </div>
-
-            {/* Bottom Section: Controls */}
-            <div className="w-full pb-16 px-8 flex items-center justify-center gap-8 z-10">
-                <button
-                    onClick={onReset}
-                    className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/30 transition-all active:scale-90"
-                >
-                    <RotateCcw className="w-6 h-6 text-white/80" />
-                </button>
-
-                <button
-                    onClick={isActive ? onPause : onResume}
-                    className="w-24 h-24 rounded-full bg-white text-black shadow-[0_0_40px_-5px_rgba(255,255,255,0.4)] flex items-center justify-center hover:scale-105 transition-all active:scale-95"
-                >
-                    {isActive ? (
-                        <Pause className="w-10 h-10 fill-current" />
-                    ) : (
-                        <Play className="w-10 h-10 fill-current ml-1" />
-                    )}
-                </button>
-            </div>
-
-            {/* Progress Bar Top */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-black/20">
-                <div
-                    className="h-full bg-white/80 shadow-[0_0_10px_white] transition-all duration-1000 ease-linear"
-                    style={{ width: `${(currentSet / totalSets) * 100}%` }}
-                />
             </div>
         </div>
     );

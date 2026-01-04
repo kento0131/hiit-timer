@@ -1,6 +1,5 @@
-
+import { Play, Minus, Plus, Zap, Coffee, Layers } from 'lucide-react';
 import type { TimerSettings } from '../hooks/useTimer';
-import { Play, Minus, Plus } from 'lucide-react';
 
 interface SettingsProps {
     settings: TimerSettings;
@@ -8,96 +7,125 @@ interface SettingsProps {
     onStart: () => void;
 }
 
-const NumberStepper = ({
-    label,
-    value,
-    onChange,
-    min = 0,
-    unit = ''
-}: {
-    label: string;
-    value: number;
-    onChange: (val: number) => void;
-    min?: number;
-    unit?: string;
-}) => (
-    <div className="bg-white/5 p-4 rounded-xl backdrop-blur-sm border border-white/10 flex items-center justify-between">
-        <span className="text-gray-300 font-medium">{label}</span>
-        <div className="flex items-center gap-4">
-            <button
-                onClick={() => onChange(Math.max(min, value - 1))}
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 touch-none"
-            >
-                <Minus className="w-5 h-5 text-white" />
-            </button>
-            <div className="w-20 text-center font-bold text-2xl text-white font-mono">
-                {value}<span className="text-sm font-normal text-gray-400 ml-1">{unit}</span>
-            </div>
-            <button
-                onClick={() => onChange(value + 1)}
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 touch-none"
-            >
-                <Plus className="w-5 h-5 text-white" />
-            </button>
+const PresetButton = ({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) => (
+    <button
+        onClick={onClick}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${active
+            ? 'bg-white text-black border-white shadow-lg scale-105'
+            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
+            }`}
+    >
+        {label}
+    </button>
+);
+
+const Section = ({ title, icon: Icon, colorClass, children }: { title: string; icon: any; colorClass: string; children: React.ReactNode }) => (
+    <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <div className={`flex items-center gap-2 ${colorClass}`}>
+            <Icon className="w-5 h-5" />
+            <h3 className="font-bold uppercase tracking-wider text-sm">{title}</h3>
         </div>
+        {children}
     </div>
 );
 
 export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onStart }) => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[100dvh] w-full bg-slate-900 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black text-white p-6">
+        <div className="flex flex-col items-center w-full max-w-md mx-auto p-6 pb-24 space-y-6 pt-24">
 
-            <div className="w-full max-w-md space-y-8 relative z-10">
-                <div className="text-center space-y-2">
-                    <div className="inline-block p-3 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 mb-4 shadow-lg shadow-red-500/20">
-                        <Play className="w-8 h-8 fill-white text-white" />
+            {/* Work Settings */}
+            <Section title="Work (Active)" icon={Zap} colorClass="text-orange-500">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-end justify-between">
+                        <span className="text-4xl font-bold font-mono text-white">{settings.workTime}<span className="text-lg text-gray-500 ml-1">s</span></span>
+                        <div className="flex gap-2">
+                            {[20, 30, 45, 60].map(val => (
+                                <PresetButton
+                                    key={val}
+                                    label={`${val}s`}
+                                    onClick={() => onUpdate({ workTime: val })}
+                                    active={settings.workTime === val}
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                        HIIT Timer
-                    </h1>
-                    <p className="text-gray-400 text-sm">Design your perfect workout</p>
-                </div>
-
-                <div className="space-y-4">
-                    <NumberStepper
-                        label="Work"
+                    <input
+                        type="range"
+                        min="5"
+                        max="180"
+                        step="5"
                         value={settings.workTime}
-                        onChange={(v) => onUpdate({ workTime: v })}
-                        min={5}
-                        unit="s"
-                    />
-                    <NumberStepper
-                        label="Rest"
-                        value={settings.restTime}
-                        onChange={(v) => onUpdate({ restTime: v })}
-                        min={5}
-                        unit="s"
-                    />
-                    <NumberStepper
-                        label="Sets"
-                        value={settings.totalSets}
-                        onChange={(v) => onUpdate({ totalSets: v })}
-                        min={1}
+                        onChange={(e) => onUpdate({ workTime: Number(e.target.value) })}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
                     />
                 </div>
+            </Section>
 
-                <button
-                    onClick={onStart}
-                    className="w-full group relative overflow-hidden bg-white text-black rounded-2xl py-4 px-6 font-bold text-lg hover:bg-gray-100 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-                >
-                    <span className="relative z-10 flex items-center gap-2">
-                        START WORKOUT
-                        <Play className="w-5 h-5 fill-current" />
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                </button>
-            </div>
+            {/* Rest Settings */}
+            <Section title="Rest (Relax)" icon={Coffee} colorClass="text-teal-400">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-end justify-between">
+                        <span className="text-4xl font-bold font-mono text-white">{settings.restTime}<span className="text-lg text-gray-500 ml-1">s</span></span>
+                        <div className="flex gap-2">
+                            {[10, 15, 30, 60].map(val => (
+                                <PresetButton
+                                    key={val}
+                                    label={`${val}s`}
+                                    onClick={() => onUpdate({ restTime: val })}
+                                    active={settings.restTime === val}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <input
+                        type="range"
+                        min="5"
+                        max="120"
+                        step="5"
+                        value={settings.restTime}
+                        onChange={(e) => onUpdate({ restTime: Number(e.target.value) })}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-teal-400 hover:accent-teal-300 transition-all"
+                    />
+                </div>
+            </Section>
 
-            {/* Decorative background elements */}
-            <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-500/10 rounded-full blur-[100px]" />
-            </div>
+            {/* Sets Settings */}
+            <Section title="Sets" icon={Layers} colorClass="text-purple-400">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-4xl font-bold font-mono text-white">{settings.totalSets}<span className="text-lg text-gray-500 ml-1">sets</span></span>
+                        <div className="flex gap-2">
+                            <button onClick={() => onUpdate({ totalSets: Math.max(1, settings.totalSets - 1) })} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <Minus className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => onUpdate({ totalSets: settings.totalSets + 1 })} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <Plus className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                    <input
+                        type="range"
+                        min="1"
+                        max="20"
+                        step="1"
+                        value={settings.totalSets}
+                        onChange={(e) => onUpdate({ totalSets: Number(e.target.value) })}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-400 hover:accent-purple-300 transition-all"
+                    />
+                </div>
+            </Section>
+
+            {/* Start Button */}
+            <button
+                onClick={onStart}
+                className="w-full group relative overflow-hidden bg-white text-black rounded-2xl py-4 px-6 font-bold text-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] mt-8"
+            >
+                <span className="relative z-10 flex items-center gap-2">
+                    START WORKOUT
+                    <Play className="w-6 h-6 fill-current" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            </button>
         </div>
     );
 };
