@@ -126,6 +126,27 @@ export const SocialDashboard: React.FC = () => {
 
             {/* List */}
             <div className="space-y-3">
+                {/* My Status */}
+                {currentUser && profiles.find(p => p.id === currentUser) && (
+                    <div className="glass-panel p-3 rounded-xl flex items-center justify-between border-2 border-teal-500/30 bg-teal-500/10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-teal-900/50 flex items-center justify-center overflow-hidden border border-teal-500/50">
+                                {profiles.find(p => p.id === currentUser)?.avatar_url ? (
+                                    <img src={profiles.find(p => p.id === currentUser)?.avatar_url!} alt="Me" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-lg font-bold text-teal-400">ME</span>
+                                )}
+                            </div>
+                            <div>
+                                <div className="font-bold text-white leading-tight">You</div>
+                                <div className={`text-xs mt-1 ${todaysLogs.has(currentUser) ? 'text-green-400 flex items-center gap-1' : 'text-orange-400'}`}>
+                                    {todaysLogs.has(currentUser) ? <><CheckCircle2 className="w-3 h-3" /> Done</> : 'Not yet'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {displayedProfiles.map(profile => {
                     const isDone = todaysLogs.has(profile.id);
 
