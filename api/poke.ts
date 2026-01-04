@@ -16,7 +16,7 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'REPLACE_WITH_SUPABASE
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 webpush.setVapidDetails(
-    'mailto:example@yourdomain.org',
+    'mailto:test@example.com', // Updated to a slightly more realistic placeholder, though user should replace in prod
     vapidKeys.publicKey,
     vapidKeys.privateKey
 );

@@ -59,7 +59,10 @@ function App() {
         .maybeSingle(); // Use maybeSingle to avoid error if 0 rows
 
       if (!existing) {
-        await supabase.from('workout_logs').insert({ user_id: userId });
+        // Calculate total duration roughly (sets * (work+rest))
+        // For accuracy we could pass it from useTimer, but for now approximation is fine or 0
+        const duration = settings.totalSets * (settings.workTime + settings.restTime);
+        await supabase.from('workout_logs').insert({ user_id: userId, total_duration: duration });
         console.log('Workout logged!');
       }
     } catch (e) {
