@@ -122,7 +122,6 @@ export const SocialDashboard: React.FC = () => {
             <div className="space-y-3">
                 {displayedProfiles.map(profile => {
                     const isDone = todaysLogs.has(profile.id);
-                    const isDone = todaysLogs.has(profile.id);
 
                     return (
                         <div key={profile.id} className="glass-panel p-3 rounded-xl flex items-center justify-between">
