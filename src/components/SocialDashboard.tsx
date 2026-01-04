@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Flame, UserPlus, Users, Search } from 'lucide-react';
+import { Flame, UserPlus, Users, Search, CheckCircle2 } from 'lucide-react';
 
 interface Profile {
     id: string;
     username: string;
+    custom_id?: string; // Add optional custom_id
     avatar_url: string | null;
 }
 
@@ -32,49 +33,52 @@ export const SocialDashboard: React.FC = () => {
             const { data: logsData } = await supabase.from('workout_logs').select('user_id').gte('created_at', today);
             setTodaysLogs(new Set(logsData?.map(l => l.user_id)));
 
-            // Fetch ALL profiles (for simple search - scalable for small app)
+            // Fetch ALL profiles (still fetching all for simplicity in this scale)
             const { data: allProfiles } = await supabase.from('profiles').select('*');
             if (allProfiles) setProfiles(allProfiles);
         };
         initData();
-    }, []);
+    }, [activeTab]); // Refresh when tab changes to get latest status if needed
 
     const toggleFollow = async (targetId: string) => {
         if (!currentUser) return;
         const isFollowing = followingIds.has(targetId);
 
         if (isFollowing) {
-            const { error } = await supabase.from('follows').delete().match({ follower_id: currentUser, following_id: targetId });
-            if (!error) {
-                const next = new Set(followingIds);
-                next.delete(targetId);
-                setFollowingIds(next);
-            }
+            await supabase.from('follows').delete().eq('follower_id', currentUser).eq('following_id', targetId);
+            const next = new Set(followingIds);
+            next.delete(targetId);
+            setFollowingIds(next);
         } else {
-            const { error } = await supabase.from('follows').insert({ follower_id: currentUser, following_id: targetId });
-            if (!error) {
-                const next = new Set(followingIds);
-                next.add(targetId);
-                setFollowingIds(next);
-            }
+            await supabase.from('follows').insert({ follower_id: currentUser, following_id: targetId });
+            const next = new Set(followingIds);
+            next.add(targetId);
+            setFollowingIds(next);
         }
     };
 
     const sendPoke = async (receiverId: string, receiverName: string) => {
         if (!currentUser) return;
-        const { error } = await supabase.from('pokes').insert({ sender_id: currentUser, receiver_id: receiverId, message: "Hey! Time to workout! 🔥" });
-        if (!error) alert(`Poked ${receiverName}!`);
+        await supabase.from('pokes').insert({ sender_id: currentUser, receiver_id: receiverId, message: 'Lets go!' });
+        alert(`Poked ${receiverName}!`);
     };
 
     // Filter displayed profiles based on Tab
     const displayedProfiles = profiles.filter(p => {
         if (p.id === currentUser) return false;
+
         if (activeTab === 'friends') {
             return followingIds.has(p.id);
         } else {
-            // Find tab: Show those NOT followed (and match search)
+            // Find tab: Show those NOT followed 
             if (followingIds.has(p.id)) return false;
-            return p.username.toLowerCase().includes(searchQuery.toLowerCase());
+
+            // Search Logic: Match by custom_id (preferred) or username
+            if (!searchQuery) return false; // Don't show random people, only search results
+            const query = searchQuery.toLowerCase();
+            const matchId = p.custom_id?.toLowerCase().includes(query);
+            const matchName = p.username?.toLowerCase().includes(query);
+            return matchId || matchName;
         }
     });
 
@@ -103,17 +107,21 @@ export const SocialDashboard: React.FC = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search users..."
+                        placeholder="Search ID (e.g. @kento)"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         className="w-full bg-gray-900/50 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/30"
                     />
+                    {displayedProfiles.length === 0 && searchQuery && (
+                        <p className="text-center text-gray-500 text-sm mt-4">No users found.</p>
+                    )}
                 </div>
             )}
 
             {/* List */}
             <div className="space-y-3">
                 {displayedProfiles.map(profile => {
+                    const isDone = todaysLogs.has(profile.id);
                     const isDone = todaysLogs.has(profile.id);
 
                     return (
@@ -127,35 +135,34 @@ export const SocialDashboard: React.FC = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white">{profile.username || 'Unknown User'}</div>
+                                    <div className="font-bold text-white leading-tight">{profile.username || 'Unknown'}</div>
+                                    {profile.custom_id && (
+                                        <div className="text-xs text-teal-400 font-mono">@{profile.custom_id}</div>
+                                    )}
+
                                     {activeTab === 'friends' && (
-                                        <div className={`text-xs ${isDone ? 'text-green-400' : 'text-gray-500'}`}>
-                                            {isDone ? 'Completed Today' : 'Not yet'}
+                                        <div className={`text-xs mt-1 ${isDone ? 'text-green-400 flex items-center gap-1' : 'text-orange-400'}`}>
+                                            {isDone ? <><CheckCircle2 className="w-3 h-3" /> Done</> : 'Not yet'}
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div>
                                 {activeTab === 'friends' ? (
-                                    /* Friend Actions: Poke or Unfollow */
-                                    <>
-                                        {!isDone && (
-                                            <button
-                                                onClick={() => sendPoke(profile.id, profile.username)}
-                                                className="bg-red-500/20 hover:bg-red-500/30 text-red-400 p-2 rounded-lg transition-colors"
-                                                title="Poke"
-                                            >
-                                                <Flame className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                        {/* Optional: Small 'Unfollow' X or similar could go here if needed, keeping it simple for now */}
-                                    </>
+                                    !isDone && (
+                                        <button
+                                            onClick={() => sendPoke(profile.id, profile.username)}
+                                            className="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-95"
+                                            title="Poke friend"
+                                        >
+                                            <Flame className="w-5 h-5" />
+                                        </button>
+                                    )
                                 ) : (
-                                    /* Find Actions: Follow */
                                     <button
                                         onClick={() => toggleFollow(profile.id)}
-                                        className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                                        className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all"
                                     >
                                         <UserPlus className="w-3 h-3" /> Add
                                     </button>

@@ -13,6 +13,7 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const { state, settings, actions } = useTimer({
     workTime: 20,
@@ -40,20 +41,26 @@ function App() {
   }, []);
 
   const checkOnboarding = async (userId: string) => {
-    // Check if user has target_days set
+    // Check if user has target_days AND custom_id set
     const { data } = await supabase
       .from('profiles')
-      .select('target_days')
+      .select('target_days, custom_id')
       .eq('id', userId)
       .single();
 
-    // If target_days exists and has length, onboarding is done
-    if (data && data.target_days && data.target_days.length > 0) {
+    // Both must be present to consider onboarding complete
+    if (data && data.target_days && data.target_days.length > 0 && data.custom_id) {
       setOnboardingComplete(true);
     } else {
       setOnboardingComplete(false);
     }
     setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setOnboardingComplete(false);
   };
 
   if (loading) {
@@ -68,9 +75,23 @@ function App() {
     return <OnboardingScreen onComplete={() => setOnboardingComplete(true)} />;
   }
 
+  if (isEditing) {
+    return (
+      <OnboardingScreen
+        onComplete={() => setIsEditing(false)}
+        initialStep={2} // Jump to schedule
+        onCancel={() => setIsEditing(false)}
+      />
+    );
+  }
+
   return (
     <>
-      <TotalTimeHeader settings={settings} />
+      <TotalTimeHeader
+        settings={settings}
+        onLogout={handleLogout}
+        onEditSchedule={() => setIsEditing(true)}
+      />
       <PokeNotification />
       {state.phase === 'idle' ? (
         <>

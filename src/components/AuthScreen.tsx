@@ -8,6 +8,7 @@ export const AuthScreen: React.FC = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [checkEmail, setCheckEmail] = useState(false);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +28,7 @@ export const AuthScreen: React.FC = () => {
                     password,
                 });
                 if (error) throw error;
-                // Auto login or show message check email
+                setCheckEmail(true);
             }
         } catch (err: any) {
             setError(err.message);
@@ -35,6 +36,30 @@ export const AuthScreen: React.FC = () => {
             setLoading(false);
         }
     };
+
+    if (checkEmail) {
+        return (
+            <div className="min-h-screen bg-[#121216] flex flex-col items-center justify-center p-6 text-white text-center animate-fade-in">
+                <div className="glass-panel p-8 rounded-2xl max-w-sm w-full">
+                    <Mail className="w-16 h-16 text-teal-400 mx-auto mb-6" />
+                    <h2 className="text-2xl font-bold mb-4">Check your email</h2>
+                    <p className="text-gray-400 mb-6">
+                        We've sent a confirmation link to <span className="text-white font-bold">{email}</span>.
+                        Please click the link to verify your account.
+                    </p>
+                    <button
+                        onClick={() => {
+                            setCheckEmail(false);
+                            setIsLogin(true);
+                        }}
+                        className="text-orange-400 hover:text-orange-300 font-bold"
+                    >
+                        Back to Log In
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#121216] flex flex-col items-center justify-center p-6 text-white relative overflow-hidden">
