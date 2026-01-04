@@ -35,10 +35,10 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onStart 
 
             {/* Work Settings */}
             <Section title="Work (Active)" icon={Zap} colorClass="text-orange-500">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-end justify-between">
-                        <span className="text-4xl font-bold font-mono text-white">{settings.workTime}<span className="text-lg text-gray-500 ml-1">s</span></span>
-                        <div className="flex gap-2">
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                        <span className="text-5xl font-bold font-mono text-white tracking-tighter">{settings.workTime}<span className="text-xl text-gray-500 ml-1">s</span></span>
+                        <div className="flex flex-wrap gap-2">
                             {[20, 30, 45, 60].map(val => (
                                 <PresetButton
                                     key={val}
@@ -63,11 +63,11 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onStart 
 
             {/* Rest Settings */}
             <Section title="Rest (Relax)" icon={Coffee} colorClass="text-teal-400">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-end justify-between">
-                        <span className="text-4xl font-bold font-mono text-white">{settings.restTime}<span className="text-lg text-gray-500 ml-1">s</span></span>
-                        <div className="flex gap-2">
-                            {[10, 15, 30, 60].map(val => (
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                        <span className="text-5xl font-bold font-mono text-white tracking-tighter">{settings.restTime}<span className="text-xl text-gray-500 ml-1">s</span></span>
+                        <div className="flex flex-wrap gap-2">
+                            {[0, 10, 15, 30].map(val => (
                                 <PresetButton
                                     key={val}
                                     label={`${val}s`}
@@ -79,7 +79,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onStart 
                     </div>
                     <input
                         type="range"
-                        min="5"
+                        min="0"
                         max="120"
                         step="5"
                         value={settings.restTime}
