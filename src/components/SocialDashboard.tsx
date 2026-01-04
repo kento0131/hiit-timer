@@ -33,7 +33,6 @@ export const SocialDashboard: React.FC = () => {
     const [todaysLogs, setTodaysLogs] = useState<Set<string>>(new Set());
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
     const [pokedUsers, setPokedUsers] = useState<Set<string>>(new Set());
     const [isSubscribed, setIsSubscribed] = useState(false);
 
@@ -184,6 +183,18 @@ export const SocialDashboard: React.FC = () => {
                     )}
                 </div>
             )}
+
+            {/* Notification Toggle */}
+            <div className="mb-4 flex justify-end">
+                {!isSubscribed && (
+                    <button
+                        onClick={subscribeUser}
+                        className="text-xs text-teal-400 border border-teal-400/30 bg-teal-400/10 px-3 py-1 rounded-full hover:bg-teal-400/20"
+                    >
+                        Enable Notifications
+                    </button>
+                )}
+            </div>
 
             {/* List */}
             <div className="space-y-3">
