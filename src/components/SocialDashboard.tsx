@@ -15,7 +15,9 @@ export const SocialDashboard: React.FC = () => {
     const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
     const [todaysLogs, setTodaysLogs] = useState<Set<string>>(new Set());
     const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [pokedUsers, setPokedUsers] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const initData = async () => {
@@ -59,8 +61,13 @@ export const SocialDashboard: React.FC = () => {
 
     const sendPoke = async (receiverId: string, receiverName: string) => {
         if (!currentUser) return;
+
+        // Immediate visual feedback
+        const next = new Set(pokedUsers);
+        next.add(receiverId);
+        setPokedUsers(next);
+
         await supabase.from('pokes').insert({ sender_id: currentUser, receiver_id: receiverId, message: 'Lets go!' });
-        alert(`Poked ${receiverName}!`);
     };
 
     // Filter displayed profiles based on Tab
@@ -75,7 +82,7 @@ export const SocialDashboard: React.FC = () => {
 
             // Search Logic: Match by custom_id (preferred) or username
             if (!searchQuery) return false; // Don't show random people, only search results
-            const query = searchQuery.toLowerCase();
+            const query = searchQuery.toLowerCase().replace('@', '');
             const matchId = p.custom_id?.toLowerCase().includes(query);
             const matchName = p.username?.toLowerCase().includes(query);
             return matchId || matchName;
@@ -134,8 +141,8 @@ export const SocialDashboard: React.FC = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white leading-tight">{profile.username || 'Unknown'}</div>
-                                    {profile.custom_id && (
+                                    <div className="font-bold text-white leading-tight">{profile.username || profile.custom_id || 'Unknown'}</div>
+                                    {profile.username && profile.custom_id && (
                                         <div className="text-xs text-teal-400 font-mono">@{profile.custom_id}</div>
                                     )}
 
@@ -150,13 +157,23 @@ export const SocialDashboard: React.FC = () => {
                             <div>
                                 {activeTab === 'friends' ? (
                                     !isDone && (
-                                        <button
-                                            onClick={() => sendPoke(profile.id, profile.username)}
-                                            className="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-95"
-                                            title="Poke friend"
-                                        >
-                                            <Flame className="w-5 h-5" />
-                                        </button>
+                                        !isDone && (
+                                            <button
+                                                onClick={() => !pokedUsers.has(profile.id) && sendPoke(profile.id, profile.username || profile.custom_id || '')}
+                                                disabled={pokedUsers.has(profile.id)}
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${pokedUsers.has(profile.id)
+                                                        ? 'bg-green-500/20 text-green-400 cursor-default'
+                                                        : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white active:scale-95'
+                                                    }`}
+                                                title="Poke friend"
+                                            >
+                                                {pokedUsers.has(profile.id) ? (
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                ) : (
+                                                    <Flame className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        )
                                     )
                                 ) : (
                                     <button
