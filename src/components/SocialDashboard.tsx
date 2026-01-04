@@ -151,15 +151,24 @@ export const SocialDashboard: React.FC = () => {
 
         // Call Vercel API
         try {
-            await fetch('/api/poke', {
+            const response = await fetch('/api/poke', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sender_id: currentUser, receiver_id: receiverId })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('API Error:', errorData);
+                // Revert visual feedback if failed (optional, but good for UX)
+                const revert = new Set(pokedUsers);
+                revert.delete(receiverId);
+                setPokedUsers(revert);
+                alert(`Failed to send notification: ${errorData.error || 'Unknown server error'}`);
+            }
         } catch (e) {
-            console.error('Error sending poke:', e);
-            // Fallback to direct DB insert if API fails? 
-            // For now, assume API works or failure is acceptable
+            console.error('Network Error sending poke:', e);
+            alert('Failed to send notification due to network error.');
         }
     };
 
