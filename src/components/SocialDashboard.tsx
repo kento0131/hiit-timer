@@ -9,6 +9,23 @@ interface Profile {
     avatar_url: string | null;
 }
 
+const VAPID_PUBLIC_KEY = 'BAmy3kdkAk5kcwoh_Fjfj6iky7R6OeEqjH5aBeXe1AVmDN6QFRmNbG7EThDmlq8CAOcefkUXw51U5h88iRM-8pk';
+
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 export const SocialDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'friends' | 'find'>('friends');
     const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -16,7 +33,9 @@ export const SocialDashboard: React.FC = () => {
     const [todaysLogs, setTodaysLogs] = useState<Set<string>>(new Set());
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [pokedUsers, setPokedUsers] = useState<Set<string>>(new Set());
+    const [isSubscribed, setIsSubscribed] = useState(false);
 
     useEffect(() => {
         const initData = async () => {
@@ -39,6 +58,15 @@ export const SocialDashboard: React.FC = () => {
             if (allProfiles) setProfiles(allProfiles);
         };
         initData();
+
+        // Check subscription status
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.pushManager.getSubscription().then(subscription => {
+                    setIsSubscribed(!!subscription);
+                });
+            });
+        }
     }, [activeTab]); // Refresh when tab changes to get latest status if needed
 
     const toggleFollow = async (targetId: string) => {
@@ -58,6 +86,28 @@ export const SocialDashboard: React.FC = () => {
         }
     };
 
+    const subscribeUser = async () => {
+        if (!('serviceWorker' in navigator)) return;
+        const registration = await navigator.serviceWorker.ready;
+
+        try {
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+
+            // Save subscription to Supabase
+            if (currentUser) {
+                await supabase.from('profiles').update({ push_subscription: subscription }).eq('id', currentUser);
+                setIsSubscribed(true);
+                alert('Notifications enabled!');
+            }
+        } catch (err) {
+            console.error('Failed to subscribe:', err);
+            alert('Failed to enable notifications. Please check browser settings.');
+        }
+    };
+
     const sendPoke = async (receiverId: string) => {
         if (!currentUser) return;
 
@@ -66,7 +116,18 @@ export const SocialDashboard: React.FC = () => {
         next.add(receiverId);
         setPokedUsers(next);
 
-        await supabase.from('pokes').insert({ sender_id: currentUser, receiver_id: receiverId, message: 'Lets go!' });
+        // Call Vercel API
+        try {
+            await fetch('/api/poke', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sender_id: currentUser, receiver_id: receiverId })
+            });
+        } catch (e) {
+            console.error('Error sending poke:', e);
+            // Fallback to direct DB insert if API fails? 
+            // For now, assume API works or failure is acceptable
+        }
     };
 
     // Filter displayed profiles based on Tab
