@@ -40,6 +40,33 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Handle timer completion
+  useEffect(() => {
+    if (state.phase === 'complete' && session?.user?.id) {
+      recordWorkoutLog(session.user.id);
+    }
+  }, [state.phase, session]);
+
+  const recordWorkoutLog = async (userId: string) => {
+    try {
+      // Check if already logged today to prevent duplicates (optional but good)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existing } = await supabase
+        .from('workout_logs')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('created_at', today)
+        .maybeSingle(); // Use maybeSingle to avoid error if 0 rows
+
+      if (!existing) {
+        await supabase.from('workout_logs').insert({ user_id: userId });
+        console.log('Workout logged!');
+      }
+    } catch (e) {
+      console.error('Error logging workout:', e);
+    }
+  };
+
   const checkOnboarding = async (userId: string) => {
     // Check if user has target_days AND custom_id set
     const { data } = await supabase

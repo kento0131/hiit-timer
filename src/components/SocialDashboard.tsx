@@ -49,12 +49,38 @@ export const SocialDashboard: React.FC = () => {
 
             // Fetch logs
             const today = new Date().toISOString().split('T')[0];
-            const { data: logsData } = await supabase.from('workout_logs').select('user_id').gte('created_at', today);
-            setTodaysLogs(new Set(logsData?.map(l => l.user_id)));
+            const loadLogs = async () => {
+                const { data: logsData } = await supabase.from('workout_logs').select('user_id').gte('created_at', today);
+                setTodaysLogs(new Set(logsData?.map(l => l.user_id)));
+            };
+            loadLogs();
 
-            // Fetch ALL profiles (still fetching all for simplicity in this scale)
+            // Fetch ALL profiles
             const { data: allProfiles } = await supabase.from('profiles').select('*');
             if (allProfiles) setProfiles(allProfiles);
+
+            // Realtime subscription for new logs
+            const channel = supabase
+                .channel('logs_channel')
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'workout_logs' },
+                    (payload) => {
+                        const newLog = payload.new as any;
+                        // Check if the log is from today (server time might differ slightly, but assuming close enough)
+                        // Ideally we check created_at, but for now just adding is fine
+                        setTodaysLogs(prev => {
+                            const next = new Set(prev);
+                            next.add(newLog.user_id);
+                            return next;
+                        });
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         };
         initData();
 
@@ -66,7 +92,7 @@ export const SocialDashboard: React.FC = () => {
                 });
             });
         }
-    }, [activeTab]); // Refresh when tab changes to get latest status if needed
+    }, [activeTab]); // Refresh when tab changes
 
     const toggleFollow = async (targetId: string) => {
         if (!currentUser) return;
