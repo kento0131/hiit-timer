@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Pause, RotateCcw, CheckCircle2 } from 'lucide-react';
-import { TimerPhase } from '../hooks/useTimer';
+import type { TimerPhase } from '../hooks/useTimer';
 
 interface TimerDisplayProps {
     phase: TimerPhase;

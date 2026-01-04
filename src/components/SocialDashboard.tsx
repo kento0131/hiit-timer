@@ -8,11 +8,6 @@ interface Profile {
     avatar_url: string | null;
 }
 
-interface WorkoutLog {
-    user_id: string;
-    created_at: string;
-}
-
 export const SocialDashboard: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [todaysLogs, setTodaysLogs] = useState<Set<string>>(new Set());
