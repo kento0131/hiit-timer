@@ -15,7 +15,6 @@ export const SocialDashboard: React.FC = () => {
     const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
     const [todaysLogs, setTodaysLogs] = useState<Set<string>>(new Set());
     const [currentUser, setCurrentUser] = useState<string | null>(null);
-    const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [pokedUsers, setPokedUsers] = useState<Set<string>>(new Set());
 
@@ -59,7 +58,7 @@ export const SocialDashboard: React.FC = () => {
         }
     };
 
-    const sendPoke = async (receiverId: string, receiverName: string) => {
+    const sendPoke = async (receiverId: string) => {
         if (!currentUser) return;
 
         // Immediate visual feedback
@@ -159,11 +158,11 @@ export const SocialDashboard: React.FC = () => {
                                     !isDone && (
                                         !isDone && (
                                             <button
-                                                onClick={() => !pokedUsers.has(profile.id) && sendPoke(profile.id, profile.username || profile.custom_id || '')}
+                                                onClick={() => !pokedUsers.has(profile.id) && sendPoke(profile.id)}
                                                 disabled={pokedUsers.has(profile.id)}
                                                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${pokedUsers.has(profile.id)
-                                                        ? 'bg-green-500/20 text-green-400 cursor-default'
-                                                        : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white active:scale-95'
+                                                    ? 'bg-green-500/20 text-green-400 cursor-default'
+                                                    : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white active:scale-95'
                                                     }`}
                                                 title="Poke friend"
                                             >
