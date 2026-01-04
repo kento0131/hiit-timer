@@ -149,8 +149,15 @@ export const SocialDashboard: React.FC = () => {
         next.add(receiverId);
         setPokedUsers(next);
 
-        // Call Vercel API
         try {
+            // 1. Insert Poke into DB (Client-side, follows RLS)
+            const { error: dbError } = await supabase
+                .from('pokes')
+                .insert({ sender_id: currentUser, receiver_id: receiverId, message: 'Lets go!' });
+
+            if (dbError) throw dbError;
+
+            // 2. Call Vercel API for Push Notification ONLY
             const response = await fetch('/api/poke', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -160,15 +167,16 @@ export const SocialDashboard: React.FC = () => {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error('API Error:', errorData);
-                // Revert visual feedback if failed (optional, but good for UX)
-                const revert = new Set(pokedUsers);
-                revert.delete(receiverId);
-                setPokedUsers(revert);
-                alert(`Failed to send notification: ${errorData.error || 'Unknown server error'}`);
+                // Don't revert visual feedback or alert user, as the poke itself succeeded.
+                // Just log the push failure. DB record exists, so "poke" happened.
             }
         } catch (e) {
-            console.error('Network Error sending poke:', e);
-            alert('Failed to send notification due to network error.');
+            console.error('Error sending poke:', e);
+            // Revert visual feedback if DB insert failed
+            const revert = new Set(pokedUsers);
+            revert.delete(receiverId);
+            setPokedUsers(revert);
+            alert('Failed to send poke. Please try again.');
         }
     };
 

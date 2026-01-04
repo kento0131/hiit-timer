@@ -32,16 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Missing sender_id or receiver_id' });
     }
 
-    // 1. Insert Poke into DB
-    const { error: dbError } = await supabase
-        .from('pokes')
-        .insert({ sender_id, receiver_id, message: message || 'Lets go!' });
-
-    if (dbError) {
-        return res.status(500).json({ error: dbError.message });
-    }
-
-    // 2. Fetch Receiver's Push Subscription
+    // 1. Fetch Receiver's Push Subscription
     const { data: receiver, error: fetchError } = await supabase
         .from('profiles')
         .select('push_subscription')
@@ -49,11 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single();
 
     if (fetchError || !receiver?.push_subscription) {
-        // User hasn't subscribed or error, but poke is saved.
-        return res.status(200).json({ message: 'Poke saved, but no push subscription found.' });
+        // User hasn't subscribed or error.
+        return res.status(200).json({ message: 'No push subscription found.' });
     }
 
-    // 3. Send Web Push
+    // 2. Send Web Push
     try {
         const payload = JSON.stringify({
             title: 'New Poke!',
@@ -61,9 +52,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         await webpush.sendNotification(receiver.push_subscription, payload);
-        return res.status(200).json({ message: 'Poke sent and notification delivered.' });
+        return res.status(200).json({ message: 'Notification delivered.' });
     } catch (error) {
         console.error('Error sending push:', error);
+        // Don't fail the request if push fails, just log it.
         return res.status(500).json({ error: 'Failed to send notification' });
     }
 }
