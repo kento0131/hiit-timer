@@ -86,10 +86,18 @@ export const SocialDashboard: React.FC = () => {
     };
 
     const subscribeUser = async () => {
-        if (!('serviceWorker' in navigator)) return;
-        const registration = await navigator.serviceWorker.ready;
+        if (!('serviceWorker' in navigator)) {
+            alert('Service Worker is not supported in this browser.');
+            return;
+        }
 
         try {
+            const registration = await navigator.serviceWorker.ready;
+            if (!registration) {
+                alert('Service Worker registration not found. Please refresh.');
+                return;
+            }
+
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -99,11 +107,11 @@ export const SocialDashboard: React.FC = () => {
             if (currentUser) {
                 await supabase.from('profiles').update({ push_subscription: subscription }).eq('id', currentUser);
                 setIsSubscribed(true);
-                alert('Notifications enabled!');
+                alert('Notifications enabled! You can now close the app and receive pokes.');
             }
         } catch (err) {
             console.error('Failed to subscribe:', err);
-            alert('Failed to enable notifications. Please check browser settings.');
+            alert(`Failed to enable notifications: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
     };
 
